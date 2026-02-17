@@ -213,7 +213,7 @@ export default function Home() {
     const p1AllClosed = isAllClosed(player1Stats);
     const p2AllClosed = isAllClosed(player2Stats);
 
-    let winner = null;
+    let winner: 1 | 2 | null = null;
     if (p1AllClosed && player1Stats.score >= player2Stats.score) {
       winner = 1;
     } else if (p2AllClosed && player2Stats.score >= player1Stats.score) {
