@@ -34,12 +34,11 @@ export default function DartButtonRow({
       {showDoubleButton ? (
         <ScoreButton
           value="2"
-          onClick={() => isDisabled ? !isDoubleAvailable? onDoublePress(value) : null : onDoublePress(value)}
+          onClick={() => (!isDisabled || isDoubleAvailable) ? onDoublePress(value) : undefined}
           className={`w-12 h-10 text-sm border-blue-300 text-white font-bold ${
-            isDisabled ? !isDoubleAvailable
+            isDisabled && !isDoubleAvailable
               ? "opacity-50 cursor-not-allowed bg-gray-400"
-              : "bg-gradient-to-br from-blue-300 via-blue-400 to-blue-500 hover:from-blue-200 hover:via-blue-300 hover:to-blue-400 shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95"
-            : "bg-gradient-to-br from-blue-300 via-blue-400 to-blue-500 hover:from-blue-200 hover:via-blue-300 hover:to-blue-400 shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95"}`}
+              : "bg-gradient-to-br from-blue-300 via-blue-400 to-blue-500 hover:from-blue-200 hover:via-blue-300 hover:to-blue-400 shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95"}`}
         />
       ) : (
         <div className="w-12 h-10"></div>
@@ -56,12 +55,11 @@ export default function DartButtonRow({
       {showTripleButton ? (
         <ScoreButton
           value="3"
-          onClick={() => isDisabled ? !isTripleAvailable? onTriplePress(value) : null : onTriplePress(value)}
+          onClick={() => (!isDisabled || isTripleAvailable) ? onTriplePress(value) : undefined}
           className={`w-12 h-10 text-sm border-red-300 text-white font-bold ${
-            isDisabled ? !isTripleAvailable
+            isDisabled && !isTripleAvailable
               ? "opacity-50 cursor-not-allowed bg-gray-400"
-              : "bg-gradient-to-br from-red-300 via-red-400 to-red-500 hover:from-red-200 hover:via-red-300 hover:to-red-400 shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95"
-            : "bg-gradient-to-br from-red-300 via-red-400 to-red-500 hover:from-red-200 hover:via-red-300 hover:to-red-400 shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95"}`}
+              : "bg-gradient-to-br from-red-300 via-red-400 to-red-500 hover:from-red-200 hover:via-red-300 hover:to-red-400 shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95"}`}
         />
       ) : (
         <div className="w-12 h-10"></div>
