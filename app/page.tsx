@@ -4,18 +4,6 @@ import { useState } from 'react';
 import Link from 'next/link';
 
 export default function Home() {
-  const [welcomeText, setWelcomeText] = useState(
-    "Welcome to Dart-Smith, your premier destination for innovative dart scoring and game management. Experience precision scoring with our advanced cricket game variants and more exciting features coming soon."
-  );
-  const [isEditing, setIsEditing] = useState(false);
-
-  const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setWelcomeText(e.target.value);
-  };
-
-  const handleEditToggle = () => {
-    setIsEditing(!isEditing);
-  };
 
   return (
     <div className="h-screen overflow-hidden md:overflow-hidden lg:overflow-auto bg-black">
@@ -29,7 +17,7 @@ export default function Home() {
               Welcome to
             </p>
             <h1 className="text-6xl md:text-8xl font-bold text-transparent bg-gradient-to-r from-silver via-white to-silver bg-clip-text drop-shadow-lg tracking-tight">
-              Dart-Smith
+              Dart-Smith.com
             </h1>
           </div>
 
@@ -38,34 +26,15 @@ export default function Home() {
             <div className="bg-gray-900 border border-silver rounded-lg p-8 shadow-lg">
               <h2 className="text-2xl font-semibold text-silver mb-6">Welcome</h2>
 
-              {isEditing ? (
-                <div className="space-y-4">
-                  <textarea
-                    value={welcomeText}
-                    onChange={handleTextChange}
-                    className="w-full h-32 bg-black border border-gray-600 rounded-lg p-4 text-white resize-none focus:outline-none focus:border-silver"
-                    placeholder="Edit your welcome message..."
-                  />
-                  <button
-                    onClick={handleEditToggle}
-                    className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors"
-                  >
-                    Save Changes
-                  </button>
-                </div>
-              ) : (
+
                 <div className="space-y-4">
                   <p className="text-gray-200 text-lg leading-relaxed">
-                    {welcomeText}
+                    Welcome to Dart-Smith.com.
+                    The plan is to build a collection of fun games that taught me how to play the game.
+                    You will find variations on some traditional games, as well as some fun multiplayer games.
+                    Feel free to use this app for practicing whilst I get building.
                   </p>
-                  <button
-                    onClick={handleEditToggle}
-                    className="px-4 py-2 text-sm bg-gray-700 hover:bg-gray-600 text-silver rounded font-medium transition-colors"
-                  >
-                    Edit Welcome Text
-                  </button>
                 </div>
-              )}
             </div>
           </div>
 
@@ -73,7 +42,7 @@ export default function Home() {
           <div className="space-y-4 text-center">
             <Link
               href="/SuperCricket"
-              className="inline-block px-8 py-4 bg-gradient-to-r from-silver to-gray-400 text-black font-bold text-xl rounded-lg hover:from-white hover:to-silver transition-all duration-300 transform hover:scale-105 shadow-lg"
+              className="inline-block px-8 py-4 bg-gradient-to-r from-white to-silver text-black font-bold text-xl rounded-lg shadow-lg"
             >
               Play Super Cricket
             </Link>
@@ -81,6 +50,21 @@ export default function Home() {
             <div className="text-sm text-gray-400 mt-4">
               More games coming soon...
             </div>
+          </div>
+
+          {/* Footer */}
+          <div className="text-center mt-8 pt-4 border-t border-gray-800">
+            <p className="text-xs text-gray-500">
+              Powered by{' '}
+              <a
+                href="https://theGratefulDev.xyz"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-gray-400 hover:text-silver transition-colors underline"
+              >
+                theGratefulDev.xyz
+              </a>
+            </p>
           </div>
 
         </div>
