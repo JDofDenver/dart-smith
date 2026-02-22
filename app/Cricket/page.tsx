@@ -2,10 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import MarkDisplay from '../../components/MarkDisplay';
-import DartButtonRow from '../../components/DartButtonRow';
+import ScoreButton from '../../components/ScoreButton';
 import Header from '../../components/Header';
 
-type DartValues = '15' | '16' | '17' | '18' | '19' | '20' | 'D' | 'T' | 'B';
+type DartValues = '15' | '16' | '17' | '18' | '19' | '20' | 'B';
 
 interface DartThrow {
   value: DartValues;
@@ -23,7 +23,7 @@ interface GameSetup {
   player2Name: string;
   matchType: 'best-of-3' | 'best-of-5' | 'best-of-7' | 'custom';
   customLegs: number;
-  selectedGame: 'super-cricket';
+  selectedGame: 'cricket';
 }
 
 interface MatchStats {
@@ -33,7 +33,7 @@ interface MatchStats {
   totalLegs: number;
 }
 
-export default function Home() {
+export default function Cricket() {
   // Screen navigation state
   const [currentScreen, setCurrentScreen] = useState<'setup' | 'game'>('setup');
 
@@ -44,7 +44,7 @@ export default function Home() {
     player2Name: '',
     matchType: 'best-of-3',
     customLegs: 3,
-    selectedGame: 'super-cricket'
+    selectedGame: 'cricket'
   });
 
   // Match tracking
@@ -62,7 +62,7 @@ export default function Home() {
   const [currentTurnDarts, setCurrentTurnDarts] = useState(0);
   const [gameWinner, setGameWinner] = useState<1 | 2 | null>(null);
 
-  const dartValues: DartValues[] = ['20', '19', '18', '17', '16', '15', 'B', 'D', 'T'];
+  const dartValues: DartValues[] = ['20', '19', '18', '17', '16', '15', 'B'];
 
   // Calculate player stats from dart arrays
   const calculatePlayerStats = (darts: DartThrow[]): PlayerStats => {
@@ -102,7 +102,7 @@ export default function Home() {
   const player1BaseStats = calculatePlayerStats(player1Darts);
   const player2BaseStats = calculatePlayerStats(player2Darts);
 
-  // Calculate scoring with proper chronological state tracking
+  // Calculate scoring with proper chronological state tracking (simplified for regular cricket)
   const calculateScore = (playerDarts: DartThrow[], opponentDarts: DartThrow[]): number => {
     let score = 0;
 
@@ -167,10 +167,6 @@ export default function Home() {
       const currentClosed = isPlayer1 ? player1Closed : player2Closed;
       const opponentClosed = isPlayer1 ? player2Closed : player1Closed;
 
-      // Check if this player has opened special multiplier areas BEFORE processing this dart
-      const hadOpenedTriples = currentClosed['T'] && !opponentClosed['T'];
-      const hadOpenedDoubles = currentClosed['D'] && !opponentClosed['D'];
-
       const prevMarks = currentMarks[value];
       const newMarks = Math.min(prevMarks + multiplier, 3);
       const excessMarks = Math.max(0, (prevMarks + multiplier) - 3);
@@ -187,18 +183,13 @@ export default function Home() {
                             (!isCalculatingPlayer1 && !isPlayer1);
 
       if (isTargetPlayer && excessMarks > 0 && newMarks >= 3) {
-        // Use the "opened" status from BEFORE this dart was processed
-        const isSpecialShot = (multiplier === 3 && hadOpenedTriples) || (multiplier === 2 && hadOpenedDoubles);
-
-        // Score if: opponent hasn't closed target OR this is a special multiplier shot
-        const shouldScore = !opponentClosed[value] || isSpecialShot;
+        // Score if opponent hasn't closed target (normal cricket rules)
+        const shouldScore = !opponentClosed[value];
 
         if (shouldScore) {
           let pointValue;
           if (value === 'B') {
             pointValue = 25;
-          } else if (value === 'D' || value === 'T') {
-            pointValue = 0;
           } else {
             pointValue = parseInt(value);
           }
@@ -221,48 +212,9 @@ export default function Home() {
     score: calculateScore(player2Darts, player1Darts)
   };
 
-  // Check if a target is disabled (both players have 3+ marks) - using calculated stats
+  // Check if a target is disabled (both players have 3+ marks)
   const isTargetDisabled = (value: DartValues) => {
     return player1Stats.isClosed[value] && player2Stats.isClosed[value];
-  };
-
-  // Check if double buttons should be available for a target
-  const isDoubleButtonAvailable = (value: DartValues) => {
-    if (value === 'D' || value === 'T') return false; // D and T don't have double buttons
-
-    const currentStats = currentPlayer === 1 ? player1Stats : player2Stats;
-    const opponentStats = currentPlayer === 1 ? player2Stats : player1Stats;
-
-    // If current player has closed D and opponent hasn't, all double buttons available
-    if (currentStats.isClosed['D'] && !opponentStats.isClosed['D']) {
-      return true;
-    }else if (currentStats.isClosed['D'] && opponentStats.isClosed['D']) {
-      return false;
-    }else {
-      // If current player hasn't closed D, can only hit doubles on open numbers
-    return !isTargetDisabled(value);
-    }
-  };
-
-  // Check if triple buttons should be available for a target
-  const isTripleButtonAvailable = (value: DartValues) => {
-    if (value === 'D' || value === 'T' || value === 'B') return false; // These don't have triple buttons
-
-    const currentStats = currentPlayer === 1 ? player1Stats : player2Stats;
-    const opponentStats = currentPlayer === 1 ? player2Stats : player1Stats;
-
-    // If current player has closed T and opponent hasn't, all triple buttons available
-    if (currentStats.isClosed['T'] && !opponentStats.isClosed['T']) {
-      return true;
-    }
-
-    // If both players have closed T, triple buttons are completely disabled
-    if (currentStats.isClosed['T'] && opponentStats.isClosed['T']) {
-      return false;
-    }
-
-    // If current player hasn't closed T, can only hit triples on open numbers
-    return !isTargetDisabled(value);
   };
 
   // Update game winner when stats change
@@ -358,7 +310,7 @@ export default function Home() {
       player2Name: '',
       matchType: 'best-of-3',
       customLegs: 3,
-      selectedGame: 'super-cricket'
+      selectedGame: 'cricket'
     });
     setMatchStats({
       player1Wins: 0,
@@ -379,18 +331,10 @@ export default function Home() {
     // Prevent adding darts if game is over or turn is full
     if (gameWinner || currentTurnDarts >= 3) return;
 
-    const currentStats = currentPlayer === 1 ? player1Stats : player2Stats;
-    const opponentStats = currentPlayer === 1 ? player2Stats : player1Stats;
+    // Allow hit if target isn't mutually closed
+    const isMutuallyClosed = player1Stats.isClosed[value] && player2Stats.isClosed[value];
 
-    // Check if this is a special case: player has opened triples/doubles and is throwing appropriate multiplier
-    const hasOpenedTriples = currentStats.isClosed['T'] && !opponentStats.isClosed['T'];
-    const hasOpenedDoubles = currentStats.isClosed['D'] && !opponentStats.isClosed['D'];
-    const isSpecialMultiplierShot = (multiplier === 3 && hasOpenedTriples) || (multiplier === 2 && hasOpenedDoubles);
-
-    // Allow hit if target isn't mutually closed OR if this is a special multiplier shot
-    const isMutuallyClosed = currentStats.isClosed[value] && opponentStats.isClosed[value];
-
-    if (isMutuallyClosed && !isSpecialMultiplierShot) {
+    if (isMutuallyClosed) {
       return;
     }
 
@@ -402,13 +346,14 @@ export default function Home() {
       setPlayer2Darts(prev => [...prev, dartThrow]);
     }
 
-    setCurrentTurnDarts(prev => prev + 1); // Count actual darts thrown, not marks
+    setCurrentTurnDarts(prev => prev + 1);
   };
 
-  const handleButtonPress = (value: DartValues) => {
-    addDart(value, 1);
+  const handleButtonPress = (value: DartValues, multiplier: number = 1) => {
+    addDart(value, multiplier);
   };
 
+  // Simplified - no double/triple handling
   const handleDoublePress = (value: DartValues) => {
     addDart(value, 2);
   };
@@ -420,16 +365,16 @@ export default function Home() {
   const undoLastDart = () => {
     if (currentPlayer === 1 && player1Darts.length > 0) {
       setPlayer1Darts(prev => prev.slice(0, -1));
-      setCurrentTurnDarts(prev => Math.max(0, prev - 1)); // Subtract one dart
+      setCurrentTurnDarts(prev => Math.max(0, prev - 1));
     } else if (currentPlayer === 2 && player2Darts.length > 0) {
       setPlayer2Darts(prev => prev.slice(0, -1));
-      setCurrentTurnDarts(prev => Math.max(0, prev - 1)); // Subtract one dart
+      setCurrentTurnDarts(prev => Math.max(0, prev - 1));
     }
   };
 
   const switchPlayer = () => {
     setCurrentPlayer(currentPlayer === 1 ? 2 : 1);
-    setCurrentTurnDarts(0); // Reset turn dart counter
+    setCurrentTurnDarts(0);
   };
 
   const resetGame = () => {
@@ -455,7 +400,7 @@ export default function Home() {
         <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
           <div className="bg-gray-900 rounded-lg p-8 max-w-md w-full mx-4 text-center">
             <h2 className="text-3xl font-bold text-yellow-400 mb-4">
-              🎉 Match Winner! 🎉
+              🏆 Match Winner! 🏆
             </h2>
             <p className="text-2xl text-white mb-6">
               {matchWinner === 1 ? gameSetup.player1Name : gameSetup.player2Name}
@@ -490,7 +435,7 @@ export default function Home() {
         <div className="flex-1 flex items-center justify-center p-4">
           <div className="bg-gray-900 rounded-lg p-8 max-w-md w-full space-y-6">
             <h2 className="text-2xl font-bold text-yellow-400 text-center mb-6">
-              Super Cricket Setup
+              Cricket Setup
             </h2>
 
             {/* Player Names */}
@@ -603,10 +548,10 @@ export default function Home() {
         onMenuClick={handleMenuClick}
       />
 
-      {/* Super Cricket Title with Match Info */}
+      {/* Cricket Title with Match Info */}
       <div className="bg-gray-900 py-2">
         <h2 className="text-center text-2xl font-bold text-yellow-400">
-          Super Cricket
+          Cricket
           {gameWinner ? (
             <span className="block text-lg text-green-400 mt-1">
               {gameWinner === 1 ? gameSetup.player1Name : gameSetup.player2Name} Wins Leg {matchStats.currentLeg}!
@@ -654,13 +599,11 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Main scoring area - aligned button rows */}
+      {/* Main scoring area with 2x/3x buttons */}
       <div className="flex-1 flex justify-center items-center px-2 py-2">
         <div className="flex justify-center items-start gap-4 max-w-full w-full">
           {/* Player 1 Marks */}
           <div className="flex flex-col gap-2 items-center flex-1">
-            {/* Spacer to align with button headers */}
-            <div className="h-6 mb-1"></div>
             {dartValues.map((value) => (
               <MarkDisplay
                 key={`p1-${value}`}
@@ -673,24 +616,45 @@ export default function Home() {
           {/* Vertical divider */}
           <div className="w-0.5 bg-gray-600 self-stretch mx-2"></div>
 
-          {/* Button Rows */}
+          {/* Button Rows with 2x/3x options */}
           <div className="flex flex-col gap-2 items-center">
-            <div className="flex gap-3 mb-1">
-              <h3 className="text-sm font-semibold text-blue-400 w-12 text-center">2X</h3>
-              <h3 className="text-sm font-semibold text-white w-16 text-center">Target</h3>
-              <h3 className="text-sm font-semibold text-red-400 w-12 text-center">3X</h3>
-            </div>
             {dartValues.map((value) => (
-              <DartButtonRow
-                key={value}
-                value={value}
-                onSinglePress={handleButtonPress}
-                onDoublePress={handleDoublePress}
-                onTriplePress={handleTriplePress}
-                isDisabled={isTargetDisabled(value)}
-                isDoubleAvailable={isDoubleButtonAvailable(value)}
-                isTripleAvailable={isTripleButtonAvailable(value)}
-              />
+              <div key={value} className="flex items-center gap-2">
+                {/* 2x Button */}
+                <ScoreButton
+                  value="2"
+                  onClick={() => !isTargetDisabled(value) && handleButtonPress(value, 2)}
+                  className={`w-10 h-10 text-xs border-blue-300 text-white font-bold ${
+                    isTargetDisabled(value)
+                      ? "opacity-50 cursor-not-allowed bg-gray-400"
+                      : "bg-gradient-to-br from-blue-300 via-blue-400 to-blue-500 hover:from-blue-200 hover:via-blue-300 hover:to-blue-400 shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95"
+                  }`}
+                />
+
+                {/* Main Target Button */}
+                <ScoreButton
+                  value={value}
+                  onClick={() => !isTargetDisabled(value) && handleButtonPress(value)}
+                  className={`w-16 h-12 text-base ${
+                    isTargetDisabled(value) ? "opacity-50 cursor-not-allowed" : ""
+                  }`}
+                />
+
+                {/* 3x Button (not available for Bull) */}
+                {value !== 'B' ? (
+                  <ScoreButton
+                    value="3"
+                    onClick={() => !isTargetDisabled(value) && handleButtonPress(value, 3)}
+                    className={`w-10 h-10 text-xs border-red-300 text-white font-bold ${
+                      isTargetDisabled(value)
+                        ? "opacity-50 cursor-not-allowed bg-gray-400"
+                        : "bg-gradient-to-br from-red-300 via-red-400 to-red-500 hover:from-red-200 hover:via-red-300 hover:to-red-400 shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95"
+                    }`}
+                  />
+                ) : (
+                  <div className="w-10 h-10"></div>
+                )}
+              </div>
             ))}
           </div>
 
@@ -699,8 +663,6 @@ export default function Home() {
 
           {/* Player 2 Marks */}
           <div className="flex flex-col gap-2 items-center flex-1">
-            {/* Spacer to align with button headers */}
-            <div className="h-6 mb-1"></div>
             {dartValues.map((value) => (
               <MarkDisplay
                 key={`p2-${value}`}

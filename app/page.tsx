@@ -41,15 +41,13 @@ export default function Home() {
           {/* Navigation/Action Buttons */}
           <div className="space-y-4 text-center">
             <Link
-              href="/SuperCricket"
-              className="inline-block px-8 py-4 bg-gradient-to-r from-white to-silver text-black font-bold text-xl rounded-lg shadow-lg"
+              href="/GameSelection"
+              className="inline-block px-12 py-6 bg-gradient-to-r from-white to-silver text-black font-bold text-2xl rounded-lg shadow-lg hover:shadow-xl transition-all"
             >
-              Play Super Cricket
+              Let's Play Darts!
             </Link>
 
-            <div className="text-sm text-gray-400 mt-4">
-              More games coming soon...
-            </div>
+
           </div>
 
           {/* Footer */}

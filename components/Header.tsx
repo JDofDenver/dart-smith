@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 interface HeaderProps {
   showPlayerNames?: boolean;
   player1Name?: string;
@@ -27,9 +29,11 @@ export default function Header({
         </button>
 
         {/* Title */}
-        <h1 className="text-2xl font-bold text-gray-800 text-center flex-1">
-          Dart-Smith
-        </h1>
+        <Link href="/">
+          <h1 className="text-2xl font-bold text-gray-800 text-center flex-1">
+            Dart-Smith.com
+          </h1>
+        </Link>
 
         {/* Spacer for symmetry */}
         <div className="w-8"></div>
