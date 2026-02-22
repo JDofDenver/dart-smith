@@ -65,78 +65,101 @@ export default function Home() {
   const player1BaseStats = calculatePlayerStats(player1Darts);
   const player2BaseStats = calculatePlayerStats(player2Darts);
 
-  // Calculate scoring with proper historical opponent state tracking
+  // Calculate scoring with proper chronological state tracking
   const calculateScore = (playerDarts: DartThrow[], opponentDarts: DartThrow[]): number => {
     let score = 0;
-    const playerMarks: { [key: string]: number } = {};
-    const playerClosed: { [key: string]: boolean } = {};
-    const opponentMarks: { [key: string]: number } = {};
-    const opponentClosed: { [key: string]: boolean } = {};
 
-    // Initialize marks tracking
+    // Determine which player we're calculating for
+    const isCalculatingPlayer1 = playerDarts === player1Darts;
+
+    // Create chronological dart sequence based on actual game flow
+    const chronologicalDarts: (DartThrow & { player: 1 | 2, dartIndex: number })[] = [];
+
+    // Players alternate turns of up to 3 darts each
+    const maxTurns = Math.max(
+      Math.ceil(player1Darts.length / 3),
+      Math.ceil(player2Darts.length / 3)
+    );
+
+    for (let turn = 0; turn < maxTurns; turn++) {
+      // Player 1's turn
+      for (let dartInTurn = 0; dartInTurn < 3; dartInTurn++) {
+        const dartIndex = turn * 3 + dartInTurn;
+        if (dartIndex < player1Darts.length) {
+          chronologicalDarts.push({
+            ...player1Darts[dartIndex],
+            player: 1,
+            dartIndex
+          });
+        }
+      }
+
+      // Player 2's turn
+      for (let dartInTurn = 0; dartInTurn < 3; dartInTurn++) {
+        const dartIndex = turn * 3 + dartInTurn;
+        if (dartIndex < player2Darts.length) {
+          chronologicalDarts.push({
+            ...player2Darts[dartIndex],
+            player: 2,
+            dartIndex
+          });
+        }
+      }
+    }
+
+    // Track game state as it progresses chronologically
+    const player1Marks: { [key: string]: number } = {};
+    const player1Closed: { [key: string]: boolean } = {};
+    const player2Marks: { [key: string]: number } = {};
+    const player2Closed: { [key: string]: boolean } = {};
+
+    // Initialize
     dartValues.forEach(value => {
-      playerMarks[value] = 0;
-      playerClosed[value] = false;
-      opponentMarks[value] = 0;
-      opponentClosed[value] = false;
+      player1Marks[value] = 0;
+      player1Closed[value] = false;
+      player2Marks[value] = 0;
+      player2Closed[value] = false;
     });
 
-    // First, process all opponent darts to build their state history
-    const opponentStateHistory: { [key: string]: boolean }[] = [];
-    opponentDarts.forEach(dart => {
+    // Process darts in chronological order
+    chronologicalDarts.forEach(dart => {
+      const isPlayer1 = dart.player === 1;
       const { value, multiplier } = dart;
-      const prevMarks = opponentMarks[value];
+
+      const currentMarks = isPlayer1 ? player1Marks : player2Marks;
+      const currentClosed = isPlayer1 ? player1Closed : player2Closed;
+      const opponentClosed = isPlayer1 ? player2Closed : player1Closed;
+
+      // Check if this player has opened special multiplier areas BEFORE processing this dart
+      const hadOpenedTriples = currentClosed['T'] && !opponentClosed['T'];
+      const hadOpenedDoubles = currentClosed['D'] && !opponentClosed['D'];
+
+      const prevMarks = currentMarks[value];
       const newMarks = Math.min(prevMarks + multiplier, 3);
-      opponentMarks[value] = newMarks;
+      const excessMarks = Math.max(0, (prevMarks + multiplier) - 3);
+
+      // Update marks and closed status
+      currentMarks[value] = newMarks;
+
       if (newMarks >= 3) {
-        opponentClosed[value] = true;
+        currentClosed[value] = true;
       }
 
-      // Save state snapshot after this dart
-      opponentStateHistory.push({...opponentClosed});
-    });
+      // Only score for the specific player we're calculating for
+      const isTargetPlayer = (isCalculatingPlayer1 && isPlayer1) ||
+                            (!isCalculatingPlayer1 && !isPlayer1);
 
-    // Now process player darts with opponent state at each point
-    playerDarts.forEach((dart, dartIndex) => {
-      const { value, multiplier } = dart;
-      const marksToAdd = multiplier;
-      const prevMarks = playerMarks[value];
-      const newMarks = Math.min(prevMarks + marksToAdd, 3);
-      const excessMarks = Math.max(0, (prevMarks + marksToAdd) - 3);
+      if (isTargetPlayer && excessMarks > 0 && newMarks >= 3) {
+        // Use the "opened" status from BEFORE this dart was processed
+        const isSpecialShot = (multiplier === 3 && hadOpenedTriples) || (multiplier === 2 && hadOpenedDoubles);
 
-      playerMarks[value] = newMarks;
-
-      // Update closed status
-      if (newMarks >= 3) {
-        playerClosed[value] = true;
-      }
-
-      // Score excess marks if conditions are met
-      if (excessMarks > 0 && newMarks >= 3) {
-        // Get opponent state AT THE TIME of this dart - use the opponent state before this player's dart
-        // Math.min ensures we don't go beyond the available opponent history
-        const relevantOpponentStateIndex = Math.min(dartIndex, opponentStateHistory.length - 1);
-        const relevantOpponentState = opponentStateHistory.length > 0
-          ? (relevantOpponentStateIndex >= 0 ? opponentStateHistory[relevantOpponentStateIndex] : {})
-          : {}; // Empty object if no opponent darts yet
-
-        // Ensure we have all keys available, fallback to false if not found
-        const opponentHadClosedT = relevantOpponentState['T'] || false;
-        const opponentHadClosedD = relevantOpponentState['D'] || false;
-        const opponentHadClosedTarget = relevantOpponentState[value] || false;
-
-        // Check if this player has opened special multiplier areas AT THIS POINT
-        const hasOpenedTriples = playerClosed['T'] && !opponentHadClosedT;
-        const hasOpenedDoubles = playerClosed['D'] && !opponentHadClosedD;
-        const isSpecialShot = (multiplier === 3 && hasOpenedTriples) || (multiplier === 2 && hasOpenedDoubles);
-
-        // Score if: opponent hadn't closed target at that time OR this is a special multiplier shot
-        const shouldScore = !opponentHadClosedTarget || isSpecialShot;
+        // Score if: opponent hasn't closed target OR this is a special multiplier shot
+        const shouldScore = !opponentClosed[value] || isSpecialShot;
 
         if (shouldScore) {
           let pointValue;
           if (value === 'B') {
-            pointValue = 25; // Bull is worth 25 per excess mark
+            pointValue = 25;
           } else if (value === 'D' || value === 'T') {
             pointValue = 0;
           } else {
@@ -196,9 +219,9 @@ export default function Home() {
       return true;
     }
 
-    // If both players have closed T, triple buttons disabled on closed numbers
+    // If both players have closed T, triple buttons are completely disabled
     if (currentStats.isClosed['T'] && opponentStats.isClosed['T']) {
-      return !isTargetDisabled(value);
+      return false;
     }
 
     // If current player hasn't closed T, can only hit triples on open numbers
@@ -297,7 +320,7 @@ export default function Home() {
     <div className="min-h-screen bg-black text-white flex flex-col">
       {/* Header Component */}
       <Header
-        showPlayerNames={true}
+        showPlayerNames={false}
         player1Name="Player 1"
         player2Name="Player 2"
         currentPlayer={currentPlayer}
@@ -319,7 +342,10 @@ export default function Home() {
       {/* Scores Section */}
       <div className="flex justify-between items-center px-4 py-3 bg-gray-900">
         <div className="text-center flex-1">
-          <div className={`text-3xl font-mono bg-gray-800 px-4 py-2 rounded border-2 mx-auto inline-block ${
+          <h3 className={`text-sm font-semibold mb-2 ${
+            currentPlayer === 1 ? 'text-yellow-400' : 'text-gray-400'
+          }`}>Player 1</h3>
+          <div className={`text-3xl font-mono bg-gray-800 px-6 py-2 rounded border-2 mx-auto inline-block ${
             currentPlayer === 1 ? 'border-yellow-400 shadow-yellow-400/50' : 'border-gray-600'
           } shadow-lg`}>
             {player1Stats.score}
@@ -336,7 +362,10 @@ export default function Home() {
         </div>
 
         <div className="text-center flex-1">
-          <div className={`text-3xl font-mono bg-gray-800 px-4 py-2 rounded border-2 mx-auto inline-block ${
+          <h3 className={`text-sm font-semibold mb-2 ${
+            currentPlayer === 2 ? 'text-yellow-400' : 'text-gray-400'
+          }`}>Player 2</h3>
+          <div className={`text-3xl font-mono bg-gray-800 px-6 py-2 rounded border-2 mx-auto inline-block ${
             currentPlayer === 2 ? 'border-yellow-400 shadow-yellow-400/50' : 'border-gray-600'
           } shadow-lg`}>
             {player2Stats.score}
@@ -349,7 +378,6 @@ export default function Home() {
         <div className="flex justify-center items-start gap-4 max-w-full w-full">
           {/* Player 1 Marks */}
           <div className="flex flex-col gap-2 items-center flex-1">
-            <h3 className="text-sm font-semibold text-yellow-400 mb-1">Player 1</h3>
             {dartValues.map((value) => (
               <MarkDisplay
                 key={`p1-${value}`}
@@ -388,7 +416,6 @@ export default function Home() {
 
           {/* Player 2 Marks */}
           <div className="flex flex-col gap-2 items-center flex-1">
-            <h3 className="text-sm font-semibold text-yellow-400 mb-1">Player 2</h3>
             {dartValues.map((value) => (
               <MarkDisplay
                 key={`p2-${value}`}
